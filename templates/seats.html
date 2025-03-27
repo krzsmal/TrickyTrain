@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% block title %}TrickyTrain - Seats{% endblock %}
+{% block additional %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/seats.css') }}">
+{% endblock %}
+{% block content %}
+    <div class="container flex-grow-1 py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                {% if data and stations %}
+                    <!-- Train category, number and name -->
+                    <h2 class="text-center mb-2 fw-bold text-primary">{{ data["train_category"] }} {{ data["train_number"] }}
+                        {% if data["train_name"] != "" %}
+                            - {{ data["train_name"] }}
+                        {% endif %}
+                    </h2>
+
+                    <!-- Departure and arrival stations -->
+                    <h3 class="text-center mb-2">{{ stations["departure_station"] }} <i class="bi bi-arrow-right-short"></i> {{ stations["arrival_station"] }}</h3>
+
+                    <!-- Departure and arrival date and time -->
+                    <h3 class="text-center mb-5">
+                        {% set same_date = (data["departure_datetime"].date() == data["arrival_datetime"].date()) %}
+                        {% if same_date %}
+                            {{ data["departure_datetime"]|format_datetime("%H:%M") }} - 
+                            {{ data["arrival_datetime"]|format_datetime("%H:%M") }} 
+                            {{ data["departure_datetime"]|format_datetime("%d.%m.%Y") }}
+                        {% else %}
+                            {{ data["departure_datetime"]|format_datetime("%H:%M %d.%m.%Y") }} - 
+                            {{ data["arrival_datetime"]|format_datetime("%H:%M %d.%m.%Y") }}
+                        {% endif %}
+                    </h3>
+
+                    <!-- Main section -->
+                    {% if data["status"] == "no_seats" %}
+                        <!-- No available seats -->
+                        <div class="alert alert-danger text-center mt-4" role="alert">Brak dostępnych miejsc</div>
+                    {% elif data["status"] == "same_seat" %}
+                        <!-- Connection without seat transfer -->
+                        <div class="row">
+                            <!-- Filter out carriages with no available seats -->
+                            {% set all_carriages = data["available_seats"].items() if data["available_seats"] else [] %}
+                            {% set carriages = [] %}
+                            {% for carriage_nr, seats in all_carriages %}
+                                {% if seats %}
+                                    {% set _ = carriages.append((carriage_nr, seats)) %}
+                                {% endif %}
+                            {% endfor %}
+
+                            <!-- Split carriages into columns -->
+                            {% set num_columns = 4 %}
+                            {% set col_data = {0: [], 1: [], 2: [], 3: []} %}
+                            {% for carriage in carriages %}
+                                {% set index = loop.index0 % num_columns %}
+                                {% set _ = col_data[index].append(carriage) %}
+                            {% endfor %}
+                        
+                            <!-- Display carriages -->
+                            {% for col_index in range(num_columns) %}
+                                <div class="col-12 col-md-3">
+                                    {% for carriage_nr, seats in col_data[col_index] %}
+                                        {% if data["available_seats"][carriage_nr]|length != 0 %}
+                                            <div class="seat-card">
+                                                <div class="seat-header">Wagon {{ carriage_nr }}</div>
+
+                                                <!-- Map seat numbers to seat types -->
+                                                {% set seat_types = {} %}
+                                                {% for seat_nr, seat in seats.items() %}
+                                                    {% set seat_types = seat_types.update({seat: seat_types.get(seat, []) + [seat_nr]}) or seat_types %}
+                                                {% endfor %}
+                                                {% set seat_names = {"normal_seat": "Normalne", "bike_seat": "Rowerowe", "quiet_zone_seat": "W strefie ciszy"} %}
+                                                {% set seat_class = {
+                                                    "normal_seat": "seat-normal",
+                                                    "bike_seat": "seat-bike",
+                                                    "quiet_zone_seat": "seat-quiet"
+                                                } %}
+                            
+                                                <!-- Display seat types and numbers -->
+                                                {% for seat_type, seat_numbers in seat_types.items() %}
+                                                    <div class="seat-badge {{ seat_class.get(seat_type, 'bg-secondary') }}" onclick="toggleSeatList(this)">
+                                                        {{ seat_names.get(seat_type, seat_type) }}: {{ seat_numbers|length }}
+                                                    </div>
+                                                    <div class="seat-list fw-bold">{{ seat_numbers|join(", ") }}</div>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Buy ticket button -->
+                        <div class="d-flex justify-content-center">
+                            <a class="btn btn-primary mt-5 fw-bold fs-5" href="{{ data['links'][0] }}" target="_blank">Kup bilet</a>
+                        </div>
+                        
+                        <!-- Toggle SVG button -->
+                        <button class="btn btn-secondary mt-2 d-block mx-auto" onclick="toggleSVG()">Pokaż/Ukryj układ miejsc</button>
+
+                        <!-- SVG section -->
+                        <div id="svgSection" class="svg-container">
+                            {% for carriage_nr, svg in data["carrige_svgs"].items() %}
+                                {% if data["available_seats"][carriage_nr]|length != 0 %}
+                                    <div class="mt-5">
+                                        <h3 class="text-center fw-bold">Wagon {{ carriage_nr }}</h3>
+                                        {{ svg | safe }}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% elif data["status"] == "seat_transfer" %}
+                        <!-- Connection with seat transfer table -->
+                        <table class="table table-striped text-center shadow-sm rounded overflow-hidden">
+                            <thead>
+                                <tr class="table-header">
+                                    <th id="index-column">#</th>
+                                    <th>Stacja początkowa</th>
+                                    <th>Odjazd</th>
+                                    <th>Stacja docelowa</th>
+                                    <th>Przyjazd</th>
+                                    <th>Czas podróży</th>
+                                    <th>Miejsca</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in range(data["stations"]|length - 1) %}
+                                <tr class="selectable-row" data-index="{{ i }}">
+                                    <!-- Connection index -->
+                                    <td>{{ i + 1 }}</td>
+
+                                    <!-- Departure station -->
+                                    <td>{{ data["stations"][i]["station_name"] }}</td>
+                                    
+                                    <!-- Departure time -->
+                                    <td>
+                                        {% if same_date %}
+                                            {{ data["stations"][i]["departure_datatime"]|format_datetime("%H:%M") }}
+                                        {% else %}
+                                            {{ data["stations"][i]["departure_datatime"]|format_datetime("%H:%M %d.%m.%Y") }}
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Arrival station -->
+                                    <td>{{ data["stations"][i+1]["station_name"] }}</td>
+                                    
+                                    <!-- Arrival time -->
+                                    <td>
+                                        {% if same_date %}
+                                            {{ data["stations"][i+1]["arrival_datatime"]|format_datetime("%H:%M") }}
+                                        {% else %}
+                                            {{ data["stations"][i+1]["arrival_datatime"]|format_datetime("%H:%M %d.%m.%Y") }}
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Travel duration -->
+                                    <td>
+                                        {% if data["stations"][i]["departure_datatime"] and data["stations"][i+1]["arrival_datatime"] %}
+                                            {{ data["stations"][i]["departure_datatime"] | calculate_duration(data["stations"][i+1]["arrival_datatime"]) }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+
+                                    <!-- Total number of seats -->
+                                    <td>
+                                        {% set ns = namespace(total_seats=0) %}
+                                        {% for carriage, seats in data["available_seats"][i].items() %}
+                                            {% set ns.total_seats = ns.total_seats + seats|length %}
+                                        {% endfor %}
+                                        {{ ns.total_seats }}
+                                    </td>
+
+                                    <!-- Buy ticket button -->
+                                    <td class="text-center">
+                                        <a type="button" class="btn btn-primary" href="{{ data['links'][i] }}" target="_blank">
+                                            <i class="bi bi-arrow-up-right-circle"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        <!-- Available seats section -->
+                        <div id="available-seats" class="mt-4 row justify-content-center"></div>
+
+                        <!-- Toggle SVG button -->
+                        <button id="toggleButton" class="btn btn-secondary mt-5 mx-auto" onclick="toggleSVG()">Pokaż/Ukryj układ miejsc</button>
+
+                        <!-- SVG section -->
+                        <div id="svgSection" class="svg-container"></div>
+                    {% endif %}
+                {% else %}
+                    <!-- Error message -->
+                    {% if data %}
+                        <div class="alert alert-danger text-center mt-4" role="alert">{{ data.error }}</div>
+                    {% else %}
+                        <div class="alert alert-danger text-center mt-4" role="alert">Wystąpił błąd TrickyTrain lub PKP Intercity</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block scripts %}
+    {% if data and stations %}
+        <script>
+            const seatsData = {{ data["available_seats"] | tojson }};
+            const svgData = {{ data["carrige_svgs"] | tojson }};
+        </script>
+        <script src="{{ url_for('static', filename='js/seats.js') }}"></script>
+    {% endif %}
+{% endblock %}

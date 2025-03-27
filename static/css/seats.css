@@ -1,0 +1,116 @@
+#toggleButton {
+    display: none;
+}
+
+/* Styles for SVG */
+.svg-container {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    opacity: 0;
+    text-align: center;
+    margin-top: 20px;
+}
+.svg-container.show {
+    max-height: 5000px;
+    opacity: 1;
+}
+svg {
+    height: auto;
+    max-width: 100%;
+    background-color: white;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Styles for seats cards */
+.seat-card {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-bottom: 24px;
+}
+.seat-header {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.seat-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 5px;
+    margin: 5px;
+    cursor: pointer;
+}
+.seat-list {
+    max-height: 0;
+    font-size: 16px;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out, margin 0.5s ease-in-out;
+    opacity: 0;
+    margin: 0 15px;
+}
+.seat-list.show {
+    max-height: 500px;
+    opacity: 1;
+    margin: 10px 15px;
+}
+
+/* Styles for table */
+.table td, .table th {
+    vertical-align: middle;
+    text-align: center;
+}
+.table input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    padding: 0;
+    font-size: inherit;
+    text-align: center;
+}
+.table input:focus {
+    outline: none;
+    box-shadow: none;
+}
+.table select {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    padding: 0;
+    font-size: inherit;
+    text-align: center;
+}
+.table select:focus {
+    outline: none;
+    box-shadow: none;
+}
+.table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+.thead-light th:first-child {
+    border-top-left-radius: 0.5rem;
+}
+.thead-light th:last-child {
+    border-top-right-radius: 0.5rem;
+}
+#index-column {
+    width: 50px;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Styles for seats badges */
+.seat-normal { background-color: #28a745; color: white; }
+.seat-bike { background-color: #dc3545; color: white; }
+.seat-quiet { background-color: #007bff; color: white; }
+
+.badge, table {
+    cursor: pointer;
+}

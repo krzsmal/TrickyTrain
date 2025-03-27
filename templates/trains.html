@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}TrickyTrain - Trains{% endblock %}
+{% block additional %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/trains.css') }}">
+{% endblock %}
+{% block content %}
+    <div class="container flex-grow-1 py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+
+                <h2 class="text-center mb-3 text-primary">Lista bezpośrednich połączeń</h2>
+
+                {% if data and stations %}
+                    <!-- Departure and arrival station -->
+                    <h2 class="text-center mb-3 fw-bold">{{ stations["departure_station"] }}<i class="bi bi-arrow-right-short"></i>{{ stations["arrival_station"] }}</h2>
+                    
+                    <!-- Depature date -->
+                    {% if data|length > 1 %}
+                        <h4 class="text-center mb-5 fw-bold">{{ data[0].departure_datetime | format_datetime("%d.%m.%Y") }}</h4>
+                    {% endif %}
+
+                    {% if data.error %}
+                        <!-- Error message -->
+                        <div class="alert alert-danger text-center" role="alert">{{ data.error }}</div>
+                    {% else %}
+                        <!-- Table with trains -->
+                        <div class="table-responsive shadow-sm rounded">
+                            <table class="table table-hover table-striped text-center align-middle">
+                                <thead class="bg-primary text-white">
+                                    <tr>
+                                        <th>Numer</th>
+                                        <th>Kategoria</th>
+                                        <th>Odjazd</th>
+                                        <th>Przyjazd</th>
+                                        <th>Czas podróży</th>
+                                        <th>Nazwa</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-light">
+                                    {% for row in data %}
+                                        <tr>
+                                            <!-- Train number -->
+                                            <td class="fw-bold">{{ row.train_number }}</td>
+
+                                            <!-- Train category -->
+                                            <td class="text-uppercase">{{ row.train_category }}</td>
+
+                                            <!-- Departure and arrival times -->
+                                            {% if (row.departure_datetime|format_datetime("%d.%m.%Y")) == (row.arrival_datetime|format_datetime("%d.%m.%Y")) %}
+                                                <!-- If the same day -->
+                                                <td><strong>{{ row.departure_datetime | format_datetime("%H:%M") }}</strong></td>
+                                                <td><strong>{{ row.arrival_datetime | format_datetime("%H:%M") }}</strong></td>
+                                            {% else %} 
+                                                <!-- If different days -->
+                                                <td><strong>{{ row.departure_datetime | format_datetime("%H:%M") }}</strong><br>{{ row.departure_datetime | format_datetime("%d.%m.%Y") }}</td>
+                                                <td><strong>{{ row.arrival_datetime | format_datetime("%H:%M") }}</strong><br>{{ row.arrival_datetime | format_datetime("%d.%m.%Y") }}</td>
+                                            {% endif %}
+
+                                            <!-- Travel time -->
+                                            <td class="travel_time">{{ row.travel_time | format_duration }}</td>
+
+                                            <!-- Train name -->
+                                            <td>{{ row.train_name }}</td>
+
+                                            <!-- Button to seats -->
+                                            <form method="post" action="/seats">
+                                                <input type="hidden" name="row" value="{{ row }}">
+                                                <input type="hidden" name="stations" value="{{ stations }}">
+                                                <td class="text-center">
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="bi bi-search"></i>
+                                                    </button>
+                                                </td>
+                                            </form>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <!-- Error message -->
+                    {% if data %}
+                        <div class="alert alert-danger text-center mt-4" role="alert">{{ data.error }}</div>
+                    {% else %}
+                        <div class="alert alert-danger text-center mt-4" role="alert">Wystąpił błąd TrickyTrain lub PKP Intercity</div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>    
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/trains.js') }}"></script>    
+{% endblock %}

@@ -1,0 +1,64 @@
+/* Styles for loading screen */
+#loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(3px);
+}
+.spinner-border {
+    width: 5rem;
+    height: 5rem;
+    border-width: 6px;
+}
+
+/* Styles for table */
+.table td, .table th {
+    vertical-align: middle;
+    text-align: center;
+}
+.table input {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    padding: 0;
+    font-size: inherit;
+    text-align: center;
+}
+.table input:focus {
+    outline: none;
+    box-shadow: none;
+}
+.table select {
+    border: none;
+    background: transparent;
+    outline: none;
+    width: 100%;
+    padding: 0;
+    font-size: inherit;
+    text-align: center;
+}
+.table select:focus {
+    outline: none;
+    box-shadow: none;
+}
+.table {
+    border-radius: 0.5rem;
+    overflow: hidden;
+    margin-bottom: 0;
+}
+.thead-light th:first-child {
+    border-top-left-radius: 0.5rem;
+}
+.thead-light th:last-child {
+    border-top-right-radius: 0.5rem;
+}
+.card {
+    padding: 0;
+}
