@@ -19,9 +19,9 @@ If a direct seat is not available for the entire journey, TrickyTrain can find s
 ## Demo Materials
 ### Direct seat
 
-![Demo Video 1](https://i.imgur.com/rrRWDWq.gif)
+![Demo Video 1](/assets/demo1.gif)
 ### Seat transfer
-![Demo Video 2](https://i.imgur.com/ZUQuIw1.gif)
+![Demo Video 2](/assets/demo2.gif)
 
 ## Installation
 
