@@ -1,5 +1,6 @@
 from curl_cffi import requests
 import json
+import time
     
 
 API_BASE_URL = "https://api-gateway.intercity.pl" 
@@ -66,16 +67,41 @@ def fetch_train_details(train_category: str, train_number: str, departure_dateti
 
 
 # Fetch the seat map of a specific carriage on a train as svg
-def fetch_carriage_seat_map(train_category: str, train_number: str, carriage_number: str, carriage_type: str, departure_datetime: str, arrival_datetime: str, departure_station_id2: str, arrival_station_id2: str) -> requests.Response:
+def fetch_carriage_seat_map(train_category: str, train_number: str, carriage_number: str, carriage_type: str, departure_datetime: str, arrival_datetime: str, departure_station_id2: str, arrival_station_id2: str, max_retries: int = 3) -> requests.Response:
     url = f"{API_BASE_URL}/grm/wagon/svg/wbnet/{train_category}/{train_number}/{carriage_number}/{carriage_type}/{departure_datetime}/{arrival_datetime}/{departure_station_id2}/{arrival_station_id2}"
     payload = {}
 
-    response = requests.get(url, headers=HEADERS, data=payload, impersonate="chrome")
+    last_exception = None
 
-    if response.status_code != 200:
-        raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_carriage_seat_map")
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=HEADERS, data=payload, impersonate="chrome")
 
-    return response
+            if response.status_code == 200:
+                return response
+
+            # Retry on 500 errors
+            if response.status_code == 500 and attempt < max_retries - 1:
+                wait_time = (2 ** attempt) * 0.5  # Exponential backoff: 0.5s, 1s, 2s
+                time.sleep(wait_time)
+                continue
+
+            # Other status codes - raise immediately
+            if response.status_code != 500:
+                raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_carriage_seat_map")
+
+        except Exception as e:
+            last_exception = e
+            if attempt < max_retries - 1:
+                wait_time = (2 ** attempt) * 0.5
+                time.sleep(wait_time)
+                continue
+            raise
+
+    # If we exhausted all retries
+    if last_exception:
+        raise last_exception
+    raise ConnectionError(f"Żądanie API zakończone kodem 500 w fetch_carriage_seat_map po {max_retries} próbach")
 
 
 # Fetch the route of a specific train

@@ -4,6 +4,7 @@ from collections import deque
 from datetime import datetime
 import concurrent.futures
 import re
+import time
 
 
 # Format datetime string into a compact format (YYYYMMDDHHMM)
@@ -132,9 +133,13 @@ def clean_svg(svg_text: str) -> str:
 
 
 # Fetch and parse the seat map of a specific carriage on a train, returns the carriage number, SVG seat map of carriage, and a dictionary of available seats with their types
-def fetch_and_parse_seat_map(carriage_number: str, carriage_type: str, train_category: str, train_number: str, departure_datetime: str, arrival_datetime: str, departure_station_id2: str, arrival_station_id2: str) -> tuple:
+def fetch_and_parse_seat_map(carriage_number: str, carriage_type: str, train_category: str, train_number: str, departure_datetime: str, arrival_datetime: str, departure_station_id2: str, arrival_station_id2: str, delay: float = 0) -> tuple:
+    # Add small delay to avoid overwhelming the API
+    if delay > 0:
+        time.sleep(delay)
+
     response = fetch_carriage_seat_map(train_category, train_number, carriage_number, carriage_type, departure_datetime, arrival_datetime, departure_station_id2, arrival_station_id2)
-    
+
     svg_text = response.text
     available_seats = parse_available_seats(svg_text)
 
@@ -149,14 +154,15 @@ def process_train_data(train_category: str, train_number: str, carriages_types: 
     num_carriages = len(carriages_types)
 
     # Fetch and parse the seat maps of all carriages concurrently
-    with concurrent.futures.ThreadPoolExecutor(max_workers=num_carriages) as executor:
-        future_to_carriage = {
-            executor.submit(fetch_and_parse_seat_map, carriage_number, carriage_type,
-                            train_category, train_number, departure_datetime, arrival_datetime,
-                            departure_station_id2, arrival_station_id2
-                            ): carriage_number
-            for carriage_number, carriage_type in carriages_types.items()
-        }
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(num_carriages, 5)) as executor:
+        future_to_carriage = {}
+        for i, (carriage_number, carriage_type) in enumerate(carriages_types.items()):
+            # Stagger requests with 0.1s delay between each
+            delay = i * 0.1
+            future = executor.submit(fetch_and_parse_seat_map, carriage_number, carriage_type,
+                                   train_category, train_number, departure_datetime, arrival_datetime,
+                                   departure_station_id2, arrival_station_id2, delay)
+            future_to_carriage[future] = carriage_number
 
         # Process the results
         for future in concurrent.futures.as_completed(future_to_carriage):
