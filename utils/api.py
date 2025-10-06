@@ -1,4 +1,4 @@
-import requests
+from curl_cffi import requests
 import json
     
 
@@ -35,7 +35,7 @@ def fetch_train_connections(date: str, departure_station_id1: str, arrival_stati
         "czasNaPrzesiadkeMin": 3
     })
 
-    response = requests.post(url, headers=HEADERS, data=payload)
+    response = requests.post(url, headers=HEADERS, data=payload, impersonate="chrome")
 
     if response.status_code != 200:
         raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_train_connections")
@@ -54,7 +54,7 @@ def fetch_train_details(train_category: str, train_number: str, departure_dateti
     url = f"{API_BASE_URL}/grm/sklad/wbnet/{train_category}/{train_number}/{departure_datetime}/{departure_station_id2}/{arrival_datetime}/{arrival_station_id2}"
     payload = {}
 
-    response = requests.request("GET", url, headers=HEADERS, data=payload)
+    response = requests.get(url, headers=HEADERS, data=payload, impersonate="chrome")
 
     if response.status_code != 200:
         raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_train_details")
@@ -70,7 +70,7 @@ def fetch_carriage_seat_map(train_category: str, train_number: str, carriage_num
     url = f"{API_BASE_URL}/grm/wagon/svg/wbnet/{train_category}/{train_number}/{carriage_number}/{carriage_type}/{departure_datetime}/{arrival_datetime}/{departure_station_id2}/{arrival_station_id2}"
     payload = {}
 
-    response = requests.request("GET", url, headers=HEADERS, data=payload)
+    response = requests.get(url, headers=HEADERS, data=payload, impersonate="chrome")
 
     if response.status_code != 200:
         raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_carriage_seat_map")
@@ -91,7 +91,7 @@ def fetch_train_route(departure_datetime: str, departure_station_id1: str, arriv
         "metoda": "pobierzTrasePrzejazdu"
     })
 
-    response = requests.request("POST", url, headers=HEADERS, data=payload)
+    response = requests.post(url, headers=HEADERS, data=payload, impersonate="chrome")
 
     if response.status_code != 200:
         raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_train_route")
@@ -110,7 +110,7 @@ def fetch_station_ids(station_name: str) -> tuple[str, str]:
     url = f"https://www.intercity.pl/station/get/?q={station_name}"
     payload = {}
 
-    response = requests.request("GET", url, headers=HEADERS, data=payload)
+    response = requests.get(url, headers=HEADERS, data=payload, impersonate="chrome")
 
     if response.status_code != 200:
         raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_station_ids")
@@ -129,7 +129,7 @@ def fetch_stations(station_name: str) -> list[str]:
     url = f"https://www.intercity.pl/station/get/?q={station_name}"
     payload = {}
 
-    response = requests.request("GET", url, headers=HEADERS, data=payload)
+    response = requests.get(url, headers=HEADERS, data=payload, impersonate="chrome")
 
     if response.status_code != 200:
         raise ConnectionError(f"Żądanie API zakończone kodem {response.status_code} w fetch_stations")
